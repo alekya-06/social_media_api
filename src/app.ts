@@ -606,97 +606,6 @@ app.get('/api/feed', authenticateToken, async (req: AuthenticatedRequest, res: R
   }
 });
 
-// Temporary endpoint to create sample posts
-app.post('/api/debug/create-posts', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
-  try {
-    const userId = req.user!.userId;
-    
-    // Create some sample posts
-    const samplePosts = [
-      "Hello world! This is my first post!",
-      "Just enjoying this beautiful day 🌞",
-      "Working on my new social media API project",
-      "Pagination is working now! 🎉",
-      "Testing the news feed functionality"
-    ];
-
-    for (const content of samplePosts) {
-      await pool.execute(
-        'INSERT INTO posts (user_id, content) VALUES (?, ?)',
-        [userId, content]
-      );
-    }
-
-    res.json({
-      success: true,
-      message: 'Created 5 sample posts for testing'
-    });
-
-  } catch (error) {
-    console.error('Create posts error:', error);
-    res.status(500).json({ success: false, error: 'Internal server error' });
-  }
-});
-
-// Debug endpoint to check all posts in database
-app.get('/api/debug/posts', async (req: Request, res: Response) => {
-  try {
-    const [posts] = await pool.execute(`
-      SELECT p.*, u.username 
-      FROM posts p 
-      LEFT JOIN users u ON p.user_id = u.id
-      ORDER BY p.id
-    `);
-
-    const [postCount] = await pool.execute('SELECT COUNT(*) as count FROM posts');
-    
-    res.json({
-      success: true,
-      total_posts: (postCount as any[])[0].count,
-      posts: posts
-    });
-
-  } catch (error) {
-    console.error('Debug posts error:', error);
-    res.status(500).json({ success: false, error: 'Internal server error' });
-  }
-});
-
-// Debug endpoint to check database connection and tables
-app.get('/api/debug/database', async (req: Request, res: Response) => {
-  try {
-    // Check posts table
-    const [posts] = await pool.execute('SELECT COUNT(*) as count FROM posts');
-    const [users] = await pool.execute('SELECT COUNT(*) as count FROM users');
-    const [follows] = await pool.execute('SELECT COUNT(*) as count FROM follows');
-    
-    // Check if we can actually query posts
-    const [samplePosts] = await pool.execute('SELECT * FROM posts LIMIT 5');
-
-    res.json({
-      success: true,
-      database_info: {
-        posts_count: (posts as any[])[0].count,
-        users_count: (users as any[])[0].count,
-        follows_count: (follows as any[])[0].count,
-        sample_posts: samplePosts,
-        can_query_posts: true
-      }
-    });
-
-  } catch (error: any) {
-    console.error('Database debug error:', error);
-    res.json({
-      success: false,
-      error: error.message,
-      database_info: {
-        can_query_posts: false
-      }
-    });
-  }
-});
-
-// Add comment to a post
 app.post('/api/posts/:postId/comments', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const postId = parseInt(req.params.postId);
@@ -714,7 +623,6 @@ app.post('/api/posts/:postId/comments', authenticateToken, async (req: Authentic
 
     const insertResult = result as any;
     
-    // Get the created comment with username
     const [comments] = await pool.execute(`
       SELECT c.*, u.username 
       FROM comments c 
@@ -724,11 +632,9 @@ app.post('/api/posts/:postId/comments', authenticateToken, async (req: Authentic
 
     const newComment = (comments as any[])[0];
 
-    // ADD NOTIFICATION: Get post owner to notify them
     const [posts] = await pool.execute('SELECT user_id FROM posts WHERE id = ?', [postId]);
     const post = (posts as any[])[0];
 
-    // Only notify if the post owner is not the one commenting (don't notify yourself)
     if (post.user_id !== userId) {
       await pool.execute(
         'INSERT INTO notifications (user_id, type, source_user_id, post_id) VALUES (?, ?, ?, ?)',
