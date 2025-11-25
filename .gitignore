@@ -1,0 +1,12 @@
+# Environment variables
+.env
+
+# Database
+*.db
+*.sqlite
+
+# Node modules
+node_modules/
+
+# TypeScript build
+dist/
