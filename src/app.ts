@@ -327,20 +327,49 @@ app.post('/api/posts', authenticateToken, async (req: AuthenticatedRequest, res:
   }
 });
 
-// Update get all posts for MySQL
+// Get all posts with pagination
+// Get all posts with pagination (FIXED)
 app.get('/api/posts', async (req: Request, res: Response) => {
   try {
-    // MySQL version
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 10;
+    const offset = (page - 1) * limit;
+
+    console.log(`Getting posts - page ${page}, limit ${limit}, offset ${offset}`);
+
+    // FIX: Use template literals for LIMIT/OFFSET to avoid parameter issues
     const [posts] = await pool.execute(`
-      SELECT p.*, u.username 
+      SELECT 
+        p.*, 
+        u.username,
+        (SELECT COUNT(*) FROM likes WHERE post_id = p.id) as like_count,
+        (SELECT COUNT(*) FROM comments WHERE post_id = p.id) as comment_count
       FROM posts p 
       JOIN users u ON p.user_id = u.id 
       ORDER BY p.created_at DESC
+      LIMIT ${limit} OFFSET ${offset}
     `);
+
+    // Get total count
+    const [totalResult] = await pool.execute(`SELECT COUNT(*) as total FROM posts`);
+    const total = (totalResult as any[])[0].total;
+    const totalPages = Math.ceil(total / limit);
+    const hasNext = page < totalPages;
+    const hasPrev = page > 1;
 
     res.json({
       success: true,
-      data: posts
+      data: posts,
+      pagination: {
+        current_page: page,
+        limit: limit,
+        total_items: total,
+        total_pages: totalPages,
+        has_next: hasNext,
+        has_prev: hasPrev,
+        next_page: hasNext ? page + 1 : null,
+        prev_page: hasPrev ? page - 1 : null
+      }
     });
 
   } catch (error) {
@@ -517,16 +546,17 @@ app.post('/api/users/:userId/follow', authenticateToken, async (req: Authenticat
   }
 });
 
-// Get news feed (posts from users you follow + your own posts)
-// Get news feed (fixed version)
-// Get news feed (fixed and simplified)
+// Get news feed with pagination (FIXED)
 app.get('/api/feed', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const userId = req.user!.userId;
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 10;
+    const offset = (page - 1) * limit;
 
-    console.log('Fetching feed for user:', userId); // Debug log
+    console.log(`Fetching feed for user ${userId}, page ${page}, limit ${limit}`);
 
-    // SIMPLE VERSION - Remove pagination and complex counts for now
+    // FIX: Use template literals for LIMIT/OFFSET
     const [posts] = await pool.execute(`
       SELECT 
         p.*, 
@@ -535,21 +565,134 @@ app.get('/api/feed', authenticateToken, async (req: AuthenticatedRequest, res: R
       FROM posts p
       JOIN users u ON p.user_id = u.id
       WHERE p.user_id IN (
-        SELECT following_id FROM follows WHERE follower_id = ?
-      ) OR p.user_id = ?
+        SELECT following_id FROM follows WHERE follower_id = ${userId}
+      ) OR p.user_id = ${userId}
       ORDER BY p.created_at DESC
-    `, [userId, userId]);
+      LIMIT ${limit} OFFSET ${offset}
+    `);
 
-    console.log('Found posts:', (posts as any[]).length); // Debug log
+    // Get total count
+    const [totalResult] = await pool.execute(`
+      SELECT COUNT(*) as total
+      FROM posts p
+      WHERE p.user_id IN (
+        SELECT following_id FROM follows WHERE follower_id = ${userId}
+      ) OR p.user_id = ${userId}
+    `);
+
+    const total = (totalResult as any[])[0].total;
+    const totalPages = Math.ceil(total / limit);
+    const hasNext = page < totalPages;
+    const hasPrev = page > 1;
 
     res.json({
       success: true,
-      data: posts
+      data: posts,
+      pagination: {
+        current_page: page,
+        limit: limit,
+        total_items: total,
+        total_pages: totalPages,
+        has_next: hasNext,
+        has_prev: hasPrev,
+        next_page: hasNext ? page + 1 : null,
+        prev_page: hasPrev ? page - 1 : null
+      }
     });
 
   } catch (error) {
-    console.error('Feed error details:', error);
+    console.error('Feed error:', error);
     res.status(500).json({ success: false, error: 'Internal server error' });
+  }
+});
+
+// Temporary endpoint to create sample posts
+app.post('/api/debug/create-posts', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const userId = req.user!.userId;
+    
+    // Create some sample posts
+    const samplePosts = [
+      "Hello world! This is my first post!",
+      "Just enjoying this beautiful day 🌞",
+      "Working on my new social media API project",
+      "Pagination is working now! 🎉",
+      "Testing the news feed functionality"
+    ];
+
+    for (const content of samplePosts) {
+      await pool.execute(
+        'INSERT INTO posts (user_id, content) VALUES (?, ?)',
+        [userId, content]
+      );
+    }
+
+    res.json({
+      success: true,
+      message: 'Created 5 sample posts for testing'
+    });
+
+  } catch (error) {
+    console.error('Create posts error:', error);
+    res.status(500).json({ success: false, error: 'Internal server error' });
+  }
+});
+
+// Debug endpoint to check all posts in database
+app.get('/api/debug/posts', async (req: Request, res: Response) => {
+  try {
+    const [posts] = await pool.execute(`
+      SELECT p.*, u.username 
+      FROM posts p 
+      LEFT JOIN users u ON p.user_id = u.id
+      ORDER BY p.id
+    `);
+
+    const [postCount] = await pool.execute('SELECT COUNT(*) as count FROM posts');
+    
+    res.json({
+      success: true,
+      total_posts: (postCount as any[])[0].count,
+      posts: posts
+    });
+
+  } catch (error) {
+    console.error('Debug posts error:', error);
+    res.status(500).json({ success: false, error: 'Internal server error' });
+  }
+});
+
+// Debug endpoint to check database connection and tables
+app.get('/api/debug/database', async (req: Request, res: Response) => {
+  try {
+    // Check posts table
+    const [posts] = await pool.execute('SELECT COUNT(*) as count FROM posts');
+    const [users] = await pool.execute('SELECT COUNT(*) as count FROM users');
+    const [follows] = await pool.execute('SELECT COUNT(*) as count FROM follows');
+    
+    // Check if we can actually query posts
+    const [samplePosts] = await pool.execute('SELECT * FROM posts LIMIT 5');
+
+    res.json({
+      success: true,
+      database_info: {
+        posts_count: (posts as any[])[0].count,
+        users_count: (users as any[])[0].count,
+        follows_count: (follows as any[])[0].count,
+        sample_posts: samplePosts,
+        can_query_posts: true
+      }
+    });
+
+  } catch (error: any) {
+    console.error('Database debug error:', error);
+    res.json({
+      success: false,
+      error: error.message,
+      database_info: {
+        can_query_posts: false
+      }
+    });
   }
 });
 
@@ -604,10 +747,13 @@ app.post('/api/posts/:postId/comments', authenticateToken, async (req: Authentic
   }
 });
 
-// Get comments for a post
+// Get comments for a post with pagination
 app.get('/api/posts/:postId/comments', async (req: Request, res: Response) => {
   try {
     const postId = parseInt(req.params.postId);
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 20;
+    const offset = (page - 1) * limit;
 
     const [comments] = await pool.execute(`
       SELECT c.*, u.username 
@@ -615,11 +761,33 @@ app.get('/api/posts/:postId/comments', async (req: Request, res: Response) => {
       JOIN users u ON c.user_id = u.id 
       WHERE c.post_id = ?
       ORDER BY c.created_at ASC
-    `, [postId]);
+      LIMIT ? OFFSET ?
+    `, [postId, limit, offset]);
+
+    // Get total comments count for this post
+    const [totalResult] = await pool.execute(
+      'SELECT COUNT(*) as total FROM comments WHERE post_id = ?',
+      [postId]
+    );
+
+    const total = (totalResult as any[])[0].total;
+    const totalPages = Math.ceil(total / limit);
+    const hasNext = page < totalPages;
+    const hasPrev = page > 1;
 
     res.json({
       success: true,
-      data: comments
+      data: comments,
+      pagination: {
+        current_page: page,
+        limit: limit,
+        total_items: total,
+        total_pages: totalPages,
+        has_next: hasNext,
+        has_prev: hasPrev,
+        next_page: hasNext ? page + 1 : null,
+        prev_page: hasPrev ? page - 1 : null
+      }
     });
 
   } catch (error) {
@@ -628,7 +796,7 @@ app.get('/api/posts/:postId/comments', async (req: Request, res: Response) => {
   }
 });
 
-// Get notifications for current user
+
 // Get notifications for current user
 app.get('/api/notifications', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
   try {
@@ -716,17 +884,36 @@ const requireAdmin = (req: AuthenticatedRequest, res: Response, next: NextFuncti
 };
 
 // Admin routes
+// Admin routes with pagination
 app.get('/api/admin/users', authenticateToken, requireAdmin, async (req: AuthenticatedRequest, res: Response) => {
   try {
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 20;
+    const offset = (page - 1) * limit;
+
     const [users] = await pool.execute(`
       SELECT id, username, email, created_at 
       FROM users 
       ORDER BY created_at DESC
-    `);
+      LIMIT ? OFFSET ?
+    `, [limit, offset]);
+
+    // Get total users count
+    const [totalResult] = await pool.execute('SELECT COUNT(*) as total FROM users');
+    const total = (totalResult as any[])[0].total;
+    const totalPages = Math.ceil(total / limit);
 
     res.json({
       success: true,
-      data: users
+      data: users,
+      pagination: {
+        current_page: page,
+        limit: limit,
+        total_items: total,
+        total_pages: totalPages,
+        has_next: page < totalPages,
+        has_prev: page > 1
+      }
     });
 
   } catch (error) {
