@@ -79,14 +79,14 @@
     </style>
 </head>
 <body>
-    <h1>🧪 Social Media API Tester</h1>
+    <h1>Social Media API Tester</h1>
     
     <div class="container">
         <!-- Left Sidebar -->
         <div class="sidebar">
             <!-- Auth Section -->
             <div class="card">
-                <h2>🔐 Authentication</h2>
+                <h2>Authentication</h2>
                 
                 <h3>Register</h3>
                 <input type="text" id="regUsername" placeholder="Username">
@@ -108,9 +108,8 @@
                 </div>
             </div>
 
-            <!-- User Actions -->
             <div class="card">
-                <h2>👥 Users</h2>
+                <h2>Users</h2>
                 <input type="number" id="profileUserId" placeholder="User ID" value="1">
                 <button onclick="getUserProfile()">Get Profile</button>
                 
@@ -120,36 +119,31 @@
                 <div id="userProfileResponse" class="response"></div>
             </div>
 
-            <!-- Notifications -->
             <div class="card">
-                <h2>🔔 Notifications</h2>
+                <h2>Notifications</h2>
                 <button onclick="getNotifications()">Get Notifications</button>
                 <button onclick="markAllRead()" class="secondary">Mark All Read</button>
                 <div id="notificationsResponse" class="response"></div>
             </div>
         </div>
 
-        <!-- Main Content -->
         <div class="main">
-            <!-- Posts -->
             <div class="card">
-                <h2>📝 Posts</h2>
+                <h2>Posts</h2>
                 <textarea id="postContent" placeholder="What's on your mind?" rows="3"></textarea>
                 <button onclick="createPost()">Create Post</button>
                 <button onclick="getAllPosts()" class="secondary">Get All Posts</button>
                 <div id="postsResponse" class="response"></div>
             </div>
 
-            <!-- Feed -->
             <div class="card">
-                <h2>📰 News Feed</h2>
+                <h2>News Feed</h2>
                 <button onclick="getNewsFeed()">Get My Feed</button>
                 <div id="feedResponse" class="response"></div>
             </div>
 
-            <!-- Comments & Likes -->
             <div class="card">
-                <h2>💬 Comments & Likes</h2>
+                <h2>Comments & Likes</h2>
                 <input type="number" id="postIdForComment" placeholder="Post ID">
                 <textarea id="commentContent" placeholder="Your comment" rows="2"></textarea>
                 <button onclick="addComment()">Add Comment</button>
@@ -167,10 +161,8 @@
         let token = '';
         let currentUser = null;
 
-        // API base URL
         const API_BASE = '/api';
 
-        // Utility function for API calls
         async function makeRequest(url, method, body = null) {
             const options = {
                 method,
@@ -201,7 +193,6 @@
             }
         }
 
-        // Display response in any element
         function displayResponse(elementId, result) {
             const element = document.getElementById(elementId);
             element.innerHTML = JSON.stringify(result, null, 2);
