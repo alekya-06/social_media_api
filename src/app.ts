@@ -115,6 +115,22 @@ async function initializeDatabase() {
   }
 }
 
+app.use('/app', express.static('frontend'));
+
+app.get('/', (req: Request, res: Response) => {
+    res.redirect('/app/index.html');
+});
+
+app.use('/tester', express.static('public'));
+
+app.get('/api', (req: Request, res: Response) => {
+  res.json({ 
+    success: true, 
+    message: 'Social Media API is running!',
+    timestamp: new Date().toISOString()
+  });
+});
+
 // Middleware
 app.use(cors());
 app.use(express.json());

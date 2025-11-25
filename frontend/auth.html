@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Authentication</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<h1>Authentication</h1>
+<a href="index.html" class="nav-btn" style="width:200px;">⬅ Back to Home</a>
+
+<div class="card">
+    <h2>Register</h2>
+    <input id="regUsername" placeholder="Username">
+    <input id="regEmail" placeholder="Email">
+    <input id="regPassword" type="password" placeholder="Password">
+    <button onclick="register()">Register</button>
+    <div id="registerResponse" class="response"></div>
+
+    <h2>Login</h2>
+    <input id="loginEmail" placeholder="Email">
+    <input id="loginPassword" type="password" placeholder="Password">
+    <button onclick="login()">Login</button>
+    <div id="loginResponse" class="response"></div>
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>

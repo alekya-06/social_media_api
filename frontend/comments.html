@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Comments & Likes</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<h1>Comments & Likes</h1>
+<a href="index.html" class="nav-btn" style="width:200px;">⬅ Back to Home</a>
+
+<div class="card">
+    <h3>Add Comment</h3>
+    <input id="postIdForComment" type="number" placeholder="Post ID">
+    <textarea id="commentContent" rows="2" placeholder="Comment"></textarea>
+    <button onclick="addComment()">Add Comment</button>
+
+    <h3>Like / Unlike</h3>
+    <input id="postIdForLike" type="number" placeholder="Post ID">
+    <button onclick="likePost()">Like / Unlike</button>
+
+    <button onclick="getComments()">Get Comments</button>
+
+    <div id="commentsResponse" class="response"></div>
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>

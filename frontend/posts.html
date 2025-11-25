@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Posts</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<h1>Posts</h1>
+<a href="index.html" class="nav-btn" style="width:200px;">⬅ Back to Home</a>
+
+<div class="card">
+    <textarea id="postContent" placeholder="Write a post..." rows="3"></textarea>
+    <button onclick="createPost()">Create Post</button>
+    <button onclick="getAllPosts()">Get All Posts</button>
+
+    <div id="postsResponse" class="response"></div>
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>

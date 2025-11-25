@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Social Media API Tester - Home</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <h1>Social Media API Tester</h1>
+
+    <div id="userStatus" class="card" style="text-align: center; margin-bottom: 30px;">
+        <div id="loggedInInfo" style="display: none;">
+            <p> Logged in as: <strong id="currentUserName">Loading...</strong></p>
+            <button onclick="logout()" class="secondary">Logout</button>
+        </div>
+        <div id="loggedOutInfo">
+            <p> Not logged in</p>
+            <a href="auth.html" class="nav-btn">Login / Register</a>
+        </div>
+    </div>
+
+    <div class="nav-container">
+        <a href="auth.html" class="nav-btn">Authentication</a>
+        <a href="users.html" class="nav-btn">Users</a>
+        <a href="posts.html" class="nav-btn">Posts</a>
+        <a href="comments.html" class="nav-btn">Comments & Likes</a>
+        <a href="feed.html" class="nav-btn">News Feed</a>
+        <a href="notifications.html" class="nav-btn">Notifications</a>
+    </div>
+
+    <script src="script.js"></script>
+    <script>
+        function updateHomePageStatus() {
+            const loggedInDiv = document.getElementById('loggedInInfo');
+            const loggedOutDiv = document.getElementById('loggedOutInfo');
+            const userNameSpan = document.getElementById('currentUserName');
+            
+            if (currentUser) {
+                loggedInDiv.style.display = 'block';
+                loggedOutDiv.style.display = 'none';
+                userNameSpan.textContent = `${currentUser.username} (ID: ${currentUser.id})`;
+            } else {
+                loggedInDiv.style.display = 'none';
+                loggedOutDiv.style.display = 'block';
+            }
+        }
+        
+        document.addEventListener('DOMContentLoaded', updateHomePageStatus);
+    </script>
+</body>
+</html>

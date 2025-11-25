@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Users</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<h1>User Actions</h1>
+<a href="index.html" class="nav-btn" style="width:200px;">⬅ Back to Home</a>
+
+<div class="card">
+    <h2>Get User Profile</h2>
+    <input id="profileUserId" type="number" placeholder="User ID">
+    <button onclick="getUserProfile()">Get Profile</button>
+
+    <h2>Follow / Unfollow</h2>
+    <input id="followUserId" type="number" placeholder="User ID">
+    <button onclick="followUser()">Follow / Unfollow</button>
+
+    <div id="userProfileResponse" class="response"></div>
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>
