@@ -121,8 +121,6 @@ app.get('/', (req: Request, res: Response) => {
     res.redirect('/app/index.html');
 });
 
-app.use('/tester', express.static('public'));
-
 app.get('/api', (req: Request, res: Response) => {
   res.json({ 
     success: true, 
@@ -152,9 +150,6 @@ const authenticateToken = (req: AuthenticatedRequest, res: Response, next: NextF
     return res.status(403).json({ success: false, error: 'Invalid token' });
   }
 };
-
-app.use(express.static('public'));
-
 
 //app.get('/', (req: Request, res: Response) => {
 //  res.json({ 
@@ -208,7 +203,7 @@ app.post('/api/auth/register', async (req: Request, res: Response) => {
 
     const isAdmin = email.endsWith('_admin@gmail.com') || email === 'admin@social.com';
 
-    // Create user (like storing in your JS list)
+    // Create user 
     const [result] = await pool.execute(
       'INSERT INTO users (username, email, password_hash, is_admin) VALUES (?, ?, ?, ?)',
       [username, email, hashedPassword, isAdmin]
@@ -314,7 +309,6 @@ app.post('/api/posts', authenticateToken, async (req: AuthenticatedRequest, res:
       return res.status(400).json({ success: false, error: 'Content is required' });
     }
 
-    // MySQL version
     const [result] = await pool.execute(
       'INSERT INTO posts (user_id, content) VALUES (?, ?)',
       [userId, content]
@@ -344,7 +338,6 @@ app.post('/api/posts', authenticateToken, async (req: AuthenticatedRequest, res:
 });
 
 // Get all posts with pagination
-// Get all posts with pagination (FIXED)
 app.get('/api/posts', async (req: Request, res: Response) => {
   try {
     const page = parseInt(req.query.page as string) || 1;
@@ -353,7 +346,6 @@ app.get('/api/posts', async (req: Request, res: Response) => {
 
     console.log(`Getting posts - page ${page}, limit ${limit}, offset ${offset}`);
 
-    // FIX: Use template literals for LIMIT/OFFSET to avoid parameter issues
     const [posts] = await pool.execute(`
       SELECT 
         p.*, 
@@ -406,7 +398,6 @@ app.post('/api/posts/:postId/like', authenticateToken, async (req: Authenticated
     );
 
     if ((existingLikes as any[]).length > 0) {
-      // Unlike
       await pool.execute('DELETE FROM likes WHERE user_id = ? AND post_id = ?', [userId, postId]);
       res.json({ 
         success: true, 
@@ -547,7 +538,7 @@ app.post('/api/users/:userId/follow', authenticateToken, async (req: Authenticat
       // ADD NOTIFICATION: User started following you
       await pool.execute(
         'INSERT INTO notifications (user_id, type, source_user_id) VALUES (?, ?, ?)',
-        [targetUserId, 'follow', followerId]  // Notify the person being followed
+        [targetUserId, 'follow', followerId]  
       );
 
       res.json({ 
@@ -562,7 +553,7 @@ app.post('/api/users/:userId/follow', authenticateToken, async (req: Authenticat
   }
 });
 
-// Get news feed with pagination (FIXED)
+
 app.get('/api/feed', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const userId = req.user!.userId;
@@ -572,7 +563,7 @@ app.get('/api/feed', authenticateToken, async (req: AuthenticatedRequest, res: R
 
     console.log(`Fetching feed for user ${userId}, page ${page}, limit ${limit}`);
 
-    // FIX: Use template literals for LIMIT/OFFSET
+
     const [posts] = await pool.execute(`
       SELECT 
         p.*, 
@@ -587,7 +578,7 @@ app.get('/api/feed', authenticateToken, async (req: AuthenticatedRequest, res: R
       LIMIT ${limit} OFFSET ${offset}
     `);
 
-    // Get total count
+
     const [totalResult] = await pool.execute(`
       SELECT COUNT(*) as total
       FROM posts p
@@ -669,7 +660,7 @@ app.post('/api/posts/:postId/comments', authenticateToken, async (req: Authentic
   }
 });
 
-// Get comments for a post with pagination
+
 app.get('/api/posts/:postId/comments', async (req: Request, res: Response) => {
   try {
     const postId = parseInt(req.params.postId);
@@ -686,7 +677,7 @@ app.get('/api/posts/:postId/comments', async (req: Request, res: Response) => {
       LIMIT ? OFFSET ?
     `, [postId, limit, offset]);
 
-    // Get total comments count for this post
+
     const [totalResult] = await pool.execute(
       'SELECT COUNT(*) as total FROM comments WHERE post_id = ?',
       [postId]
@@ -719,7 +710,7 @@ app.get('/api/posts/:postId/comments', async (req: Request, res: Response) => {
 });
 
 
-// Get notifications for current user
+
 app.get('/api/notifications', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const userId = req.user!.userId;
@@ -757,13 +748,12 @@ app.get('/api/notifications', authenticateToken, async (req: AuthenticatedReques
 });
 
 
-// Mark notification as read
+
 app.patch('/api/notifications/:notificationId/read', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const notificationId = parseInt(req.params.notificationId);
     const userId = req.user!.userId;
 
-    // Verify the notification belongs to the user
     const [notifications] = await pool.execute(
       'SELECT * FROM notifications WHERE id = ? AND user_id = ?',
       [notificationId, userId]
@@ -806,7 +796,6 @@ const requireAdmin = (req: AuthenticatedRequest, res: Response, next: NextFuncti
 };
 
 // Admin routes
-// Admin routes with pagination
 app.get('/api/admin/users', authenticateToken, requireAdmin, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const page = parseInt(req.query.page as string) || 1;
