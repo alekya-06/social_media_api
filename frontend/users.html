@@ -21,6 +21,45 @@
     <div id="userProfileResponse" class="response"></div>
 </div>
 
+<div id="adminSection" class="card" style="display: none;">
+    <h2>Admin User Management</h2>
+    <p style="color: #666; font-size: 14px; margin-bottom: 15px;">
+        View all registered users in the system (Admin only)
+    </p>
+    
+    <div style="margin-bottom: 15px;">
+        <label>Page: </label>
+        <input id="adminPage" type="number" value="1" min="1" style="width: 80px;">
+        <label>Limit: </label>
+        <input id="adminLimit" type="number" value="20" min="1" max="100" style="width: 80px;">
+        <button onclick="getAllUsers()">Get Users</button>
+    </div>
+    
+    <div id="adminUsersResponse" class="response"></div>
+    
+    <div id="usersTableContainer" style="display: none; margin-top: 20px;">
+        <table id="usersTable" style="width: 100%; border-collapse: collapse;">
+            <thead>
+                <tr style="background: #f8f9fa;">
+                    <th style="padding: 12px; border: 1px solid #ddd; text-align: left;">ID</th>
+                    <th style="padding: 12px; border: 1px solid #ddd; text-align: left;">Username</th>
+                    <th style="padding: 12px; border: 1px solid #ddd; text-align: left;">Email</th>
+                    <th style="padding: 12px; border: 1px solid #ddd; text-align: left;">Admin</th>
+                    <th style="padding: 12px; border: 1px solid #ddd; text-align: left;">Joined</th>
+                </tr>
+            </thead>
+            <tbody id="usersTableBody">
+            </tbody>
+        </table>
+        
+        <div id="paginationControls" style="margin-top: 15px; text-align: center;">
+            <button id="prevPage" onclick="changePage(-1)">Previous</button>
+            <span id="pageInfo" style="margin: 0 15px;"></span>
+            <button id="nextPage" onclick="changePage(1)">Next</button>
+        </div>
+    </div>
+</div>
+
 <script src="script.js"></script>
 </body>
 </html>

@@ -121,14 +121,6 @@ app.get('/', (req: Request, res: Response) => {
     res.redirect('/app/index.html');
 });
 
-app.get('/api', (req: Request, res: Response) => {
-  res.json({ 
-    success: true, 
-    message: 'Social Media API is running!',
-    timestamp: new Date().toISOString()
-  });
-});
-
 // Middleware
 app.use(cors());
 app.use(express.json());
@@ -150,27 +142,6 @@ const authenticateToken = (req: AuthenticatedRequest, res: Response, next: NextF
     return res.status(403).json({ success: false, error: 'Invalid token' });
   }
 };
-
-//app.get('/', (req: Request, res: Response) => {
-//  res.json({ 
-//    success: true, 
-//    message: 'Social Media API is running!',
-//    timestamp: new Date().toISOString()
-//  });
-//});
-
-app.get('/', (req: Request, res: Response) => {
-    res.sendFile('webpage.html', { root: 'public' });
-});
-
-//API status check
-app.get('/api', (req: Request, res: Response) => {
-  res.json({ 
-    success: true, 
-    message: 'Social Media API is running!',
-    timestamp: new Date().toISOString()
-  });
-});
 
 // Register endpoint
 app.post('/api/auth/register', async (req: Request, res: Response) => {
@@ -299,7 +270,7 @@ app.post('/api/auth/login', async (req: Request, res: Response) => {
   }
 });
 
-// Update create post endpoint for MySQL
+// Update create post endpoint
 app.post('/api/posts', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { content } = req.body;
@@ -787,7 +758,6 @@ const requireAdmin = (req: AuthenticatedRequest, res: Response, next: NextFuncti
     return res.status(401).json({ success: false, error: 'Authentication required' });
   }
   
-  // Check if user is admin from the token
   if (!req.user.isAdmin) {
     return res.status(403).json({ success: false, error: 'Admin access required' });
   }
@@ -795,19 +765,20 @@ const requireAdmin = (req: AuthenticatedRequest, res: Response, next: NextFuncti
   next();
 };
 
-// Admin routes
 app.get('/api/admin/users', authenticateToken, requireAdmin, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const page = parseInt(req.query.page as string) || 1;
     const limit = parseInt(req.query.limit as string) || 20;
     const offset = (page - 1) * limit;
 
+    console.log(`Admin users query - page: ${page}, limit: ${limit}, offset: ${offset}`);
+
     const [users] = await pool.execute(`
-      SELECT id, username, email, created_at 
+      SELECT id, username, email, is_admin, created_at 
       FROM users 
       ORDER BY created_at DESC
-      LIMIT ? OFFSET ?
-    `, [limit, offset]);
+      LIMIT ${limit} OFFSET ${offset}
+    `);
 
     // Get total users count
     const [totalResult] = await pool.execute('SELECT COUNT(*) as total FROM users');
@@ -829,10 +800,12 @@ app.get('/api/admin/users', authenticateToken, requireAdmin, async (req: Authent
 
   } catch (error) {
     console.error('Admin users error:', error);
-    res.status(500).json({ success: false, error: 'Internal server error' });
+    res.status(500).json({ 
+      success: false, 
+      error: 'Internal server error',
+    });
   }
 });
-
 
 // Start server
 async function startServer() {
